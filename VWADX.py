@@ -3,14 +3,19 @@
 @author: Saswata Banerjee
 """
 
-import pandas as pd, numpy as np, matplotlib.pyplot as pyplot, yfinance as yf
+import pandas as pd, numpy as np, yfinance as yf
 pd.options.mode.chained_assignment = None
 
 N = 14 # Number of Periods for Indicator Parameters
 N1 = 8 # Fast Period for MACD
-start_date = '2011-01-01'
-end_date = '2020-12-31'
-duration = 10 # 10 years backtest
+## Pre COVID Backtest
+# start_date = '2016-01-01'
+# end_date = '2019-12-31'
+# duration = 4
+## COVID era Backtest
+start_date = '2020-01-01'
+end_date = '2021-06-30'
+duration = 1.5
 
 # Use with period2 > period1 ONLY
 def MACD(data: pd.DataFrame, period1: int, period2: int):
@@ -114,7 +119,7 @@ def tradesig_adx(data: pd.DataFrame):
 def tradesig_vwadx(data: pd.DataFrame):
     df = data.copy()
     df['sig_VWADX'] = np.where(
-        df['VWADX'] > 50,
+        df['VWADX'] > 25,
         1.0,
         0.0
     )
@@ -143,7 +148,13 @@ def trade(data: pd.DataFrame):
     del df['ret'], df['ret_ADX'], df['ret_VWADX'], df['trade_ADX'], df['trade_VWADX']
     return df
 
-tickers = 'AXISBANK.NS ADANIPORTS.NS ASIANPAINT.NS BAJAJ-AUTO.NS BAJFINANCE.NS BAJAJFINSV.NS BPCL.NS BHARTIARTL.NS BRITANNIA.NS CIPLA.NS COALINDIA.NS DIVISLAB.NS DRREDDY.NS EICHERMOT.NS GRASIM.NS HCLTECH.NS HDFCBANK.NS HEROMOTOCO.NS HINDALCO.NS HINDUNILVR.NS ICICIBANK.NS ITC.NS IOC.NS INDUSINDBK.NS INFY.NS JSWSTEEL.NS KOTAKBANK.NS LT.NS M&M.NS MARUTI.NS NTPC.NS NESTLEIND.NS ONGC.NS POWERGRID.NS RELIANCE.NS SBIN.NS SHREECEM.NS SUNPHARMA.NS TCS.NS TATACONSUM.NS TATAMOTORS.NS TATASTEEL.NS TECHM.NS TITAN.NS UPL.NS ULTRACEMCO.NS WIPRO.NS'
+## Nifty 50 Stocks
+# tickers = 'AXISBANK.NS ADANIPORTS.NS ASIANPAINT.NS BAJAJ-AUTO.NS BAJFINANCE.NS BAJAJFINSV.NS BPCL.NS BHARTIARTL.NS BRITANNIA.NS CIPLA.NS COALINDIA.NS DIVISLAB.NS DRREDDY.NS EICHERMOT.NS GRASIM.NS HCLTECH.NS HDFC.NS HDFCBANK.NS HEROMOTOCO.NS HINDALCO.NS HINDUNILVR.NS ICICIBANK.NS ITC.NS IOC.NS INDUSINDBK.NS INFY.NS JSWSTEEL.NS KOTAKBANK.NS LT.NS M&M.NS MARUTI.NS NTPC.NS NESTLEIND.NS ONGC.NS POWERGRID.NS RELIANCE.NS SBIN.NS SHREECEM.NS SUNPHARMA.NS TCS.NS TATACONSUM.NS TATAMOTORS.NS TATASTEEL.NS TECHM.NS TITAN.NS UPL.NS ULTRACEMCO.NS WIPRO.NS'
+## World Index ETFs
+# tickers = 'URTH VT EEM DGT IVW IVE NDQ.AX IWM VGK DAX 513660.SS EIDO EWA EWC EWS EWM EWZ EWW EIS'
+## Multi Asset Class
+tickers = 'TLT IEF SHY HYG JNK HYT USO BNO GLD GOLDBEES.NS IAU BTC-USD'
+
 ticker_list = tickers.split(' ')
 stock_data = []
 for i in range(len(ticker_list)):
@@ -159,4 +170,33 @@ for i in range(len(ticker_list)):
 
 perf = pd.DataFrame.from_dict(performance)
 perf = perf.set_index('Ticker')
-perf.to_csv('Strategy Performance.csv')
+perf['ADX>BNH'] = np.where(
+    perf['ADX_CAGR'] > perf['Buy_and_Hold_CAGR'],
+    1,
+    0
+)
+perf['VWADX>BNH'] = np.where(
+    perf['VWADX_CAGR'] > perf['Buy_and_Hold_CAGR'],
+    1,
+    0
+)
+perf['VWADX>ADX'] = np.where(
+    perf['VWADX_CAGR'] > perf['ADX_CAGR'],
+    1,
+    0
+)
+summary = {'ADX better than BNH': sum(perf['ADX>BNH']), 'VWADX better than BNH': sum(perf['VWADX>BNH']), 'VWADX better than ADX': sum(perf['VWADX>ADX'])}
+del perf['ADX>BNH'], perf['VWADX>BNH'], perf['VWADX>ADX']
+
+## Pre COVID NIFTY 50 Backtest
+# perf.to_csv('Strategy Performance NIFTY 50 Pre COVID.csv')
+## COVID era NIFTY 50 Backtest
+# perf.to_csv('Strategy Performance NIFTY 50 COVID era.csv')
+## Pre COVID World Index ETFs Backtest
+# perf.to_csv('Strategy Performance World Index ETFs Pre COVID.csv')
+## COVID era World Index ETFs Backtest
+# perf.to_csv('Strategy Performance World Index ETFs COVID era.csv')
+## Pre COVID Multi Asset Class Backtest
+# perf.to_csv('Strategy Performance Multi Asset Class Pre COVID.csv')
+## COVID era Multi Asset Backtest
+perf.to_csv('Strategy Performance Multi Asset Class COVID era.csv')
